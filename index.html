@@ -130,7 +130,7 @@
 		//		Init
 		//////////////////////////////////////////////////////////////////////////////////
 
-		CheckBrowser();
+		checkBrowser();
 
 		if (CheckWebRTC() === false) {
 			alert("WEBRTC not supported!");
@@ -142,7 +142,7 @@
 		} else {
 			alert("passed webrtc check");
 			document.getElementById("WechatErrorDialog").style.display = "none";
-
+		
 			// init renderer
 			var renderer = new THREE.WebGLRenderer({
 				// antialias	: true,
