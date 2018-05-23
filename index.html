@@ -103,6 +103,7 @@
 			// }
 		}
 
+		var isOpenedFromWechat = false;
 		function checkBrowser() {
 			if ((navigator.userAgent.indexOf("Opera") || navigator.userAgent.indexOf('OPR')) != -1) {
 				alert('Opera');
@@ -122,6 +123,7 @@
 			}
 			else {
 				alert('unknown');
+				isOpenedFromWechat = true;
 			}
 		}
 
@@ -133,7 +135,7 @@
 		checkBrowser();
 
 
-		if (CheckWebRTC() === false) {
+		if (isOpenedFromWechat === true) {
 			alert("WEBRTC not supported!");
 			document.getElementById("playBtn").style.display = "none";
 			document.getElementById("cubeBtn").style.display = "none";
