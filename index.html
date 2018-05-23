@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<!-- three.js library -->
+<script src='AR.js/three.js/examples/vendor/three.js/build/three.min.js'></script>
+<script src="AR.js/three.js/examples/vendor/three.js/examples/js/libs/stats.min.js"></script>
+
+<!-- Detect WebRTC -->
+<script src="https://github.com/muaz-khan/DetectRTC/releases/download/1.3.6/DetectRTC.js"></script>
+
+<!-- ar.js -->
+<script src="AR.js/three.js/build/ar.js"></script>
+<script>THREEx.ArToolkitContext.baseURL = './'</script>
+
+<head>
+	<style>
+		#playBtn {
+			position: absolute;
+			top: 100px;
+		}
+
+		#cubeBtn {
+			position: absolute;
+			top: 200px;
+		}
+
+		#imageBtn {
+			position: absolute;
+			top: 300px;
+		}
+
+		#openlink {
+			position: absolute;
+			top: 400px;
+			font-size: 30px;
+			background-color: yellow;
+		}
+
+		#WechatErrorDialog {
+			display: none;
+			width: 100%;
+			height: 100%;
+			text-align: center;
+			justify-content: center;
+			background-color: yellow;
+			z-index: -1;
+			font-size: 30px;
+		}
+
+		#ErrorMsg {
+			align-self: center;
+		}
+	</style>
+</head>
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+	<!-- <div style='position: absolute; top: 10px; width:100%; text-align: center; z-index: 1;'>
+		<a href="https://github.com/jeromeetienne/AR.js/" target="_blank">AR.js</a> - three.js mobile performance
+		<br/> Contact me any time at
+		<a href='https://twitter.com/jerome_etienne' target='_blank'>@jerome_etienne</a>
+	</div> -->
+
+	<video id="video" playsinline autoplay loop crossOrigin="anonymous" webkit-playsinline style="display:none">
+		<source src="content/sintel.ogv" type='video/ogg; codecs="theora, vorbis"'>
+		<source src="content/sintel.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+	</video>
+
+	<div id="WechatErrorDialog">
+		<p id="ErrorMsg">
+			Please copy the link below and open it in Safari browser. http://www.baidu.com
+		</p>
+	</div>
+
+	<script>
+		function playVideo() {
+			document.getElementById('video').play();
+		}
+
+		function CheckWebRTC() {
+
+			return DetectRTC.isWebRTCSupported === true;
+			// if (DetectRTC.isWebRTCSupported === false) {
+			// 	alert('Please use Chrome or Firefox.');
+			// } else {
+			// 	alert('isWebRTCSupported passed');
+			// }
+
+			// if (DetectRTC.hasWebcam === false) {
+			// 	alert('Please install an external webcam device.');
+			// } else {
+			// 	alert("hasWebcam passed");
+			// }
+
+			// if (DetectRTC.hasMicrophone === false) {
+			// 	alert('Please install an external microphone device.');
+			// } else {
+			// 	alert("hasMicrophone passed");
+			// }
+
+			// if (DetectRTC.hasSpeakers === false && (DetectRTC.browser.name === 'Chrome' || DetectRTC.browser.name === 'Edge')) {
+			// 	alert('Oops, your system can not play audios.');
+			// } else {
+			// 	alert("hasSpeakers passed");
+			// }
+		}
+
+
+		//////////////////////////////////////////////////////////////////////////////////
+		//		Init
+		//////////////////////////////////////////////////////////////////////////////////
+		var isWeixin = false;
+
+		if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
+			isWeixin = true;
+		} else {
+			if (document.addEventListener) {
+				document.addEventListener("WeixinJSBridgeReady", function() { isWeixin = true; }, false);
+			} else if (document.attachEvent) {
+				document.attachEvent("WeixinJSBridgeReady", function() { isWeixin = true; });
+				document.attachEvent("onWeixinJSBridgeReady", function() { isWeixin = true; });
+			}
+		}
+
+		alert("is opened from wechat? " + String(isWeixin));
+
+
+		if (CheckWebRTC() === false) {
+			alert("WEBRTC not supported!");
+			document.getElementById("playBtn").style.display = "none";
+			document.getElementById("cubeBtn").style.display = "none";
+			document.getElementById("imageBtn").style.display = "none";
+			document.getElementById("openlink").style.display = "none";
+			document.getElementById("WechatErrorDialog").style.display = "flex";
+		} else {
+			alert("passed webrtc check");
+			document.getElementById("WechatErrorDialog").style.display = "none";
+		
+			// init renderer
+			var renderer = new THREE.WebGLRenderer({
+				// antialias	: true,
+				alpha: true
+			});
+			renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+			// renderer.setPixelRatio( 1/2 );
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.domElement.style.position = 'absolute'
+			renderer.domElement.style.top = '0px'
+			renderer.domElement.style.left = '0px'
+			document.body.appendChild(renderer.domElement);
+
+
+			// array of functions for the rendering loop
+			var onRenderFcts = [];
+
+			// init scene and camera
+			var scene = new THREE.Scene();
+
+			//////////////////////////////////////////////////////////////////////////////////
+			//		Initialize a basic camera
+			//////////////////////////////////////////////////////////////////////////////////
+
+			// Create a camera
+			var camera = new THREE.Camera();
+			scene.add(camera);
+
+			////////////////////////////////////////////////////////////////////////////////
+			//          handle arToolkitSource
+			////////////////////////////////////////////////////////////////////////////////
+
+			var arToolkitSource = new THREEx.ArToolkitSource({
+				// to read from the webcam
+				sourceType: 'webcam',
+
+				// to read from an image
+				// sourceType : 'image',
+				// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/images/img.jpg',
+
+				// to read from a video
+				// sourceType : 'video',
+				// sourceUrl : THREEx.ArToolkitContext.baseURL + '../data/videos/headtracking.mp4',
+			})
+
+			arToolkitSource.init(function onReady() {
+				onResize()
+			})
+
+			// handle resize
+			window.addEventListener('resize', function () {
+				onResize()
+			})
+			function onResize() {
+				arToolkitSource.onResize()
+				arToolkitSource.copySizeTo(renderer.domElement)
+				if (arToolkitContext.arController !== null) {
+					arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)
+				}
+			}
+			////////////////////////////////////////////////////////////////////////////////
+			//          initialize arToolkitContext
+			////////////////////////////////////////////////////////////////////////////////
+
+
+			// create atToolkitContext
+			var arToolkitContext = new THREEx.ArToolkitContext({
+				cameraParametersUrl: THREEx.ArToolkitContext.baseURL + 'AR.js/data/data/camera_para.dat',
+				detectionMode: 'mono',
+				maxDetectionRate: 30,
+				canvasWidth: 80 * 3,
+				canvasHeight: 60 * 3,
+			})
+			// initialize it
+			arToolkitContext.init(function onCompleted() {
+				// copy projection matrix to camera
+				camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+			})
+
+			// update artoolkit on every frame
+			onRenderFcts.push(function () {
+				if (arToolkitSource.ready === false) return
+
+				arToolkitContext.update(arToolkitSource.domElement)
+			})
+
+
+			////////////////////////////////////////////////////////////////////////////////
+			//          Create a ArMarkerControls
+			////////////////////////////////////////////////////////////////////////////////
+
+			//////////////////////////////////////////////////////////////////////////////
+			//		markerRoot1
+			//////////////////////////////////////////////////////////////////////////////
+			// build markerControls
+			var markerCinco = new THREE.Group
+			markerCinco.name = 'markerCinco'
+			scene.add(markerCinco)
+			var markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerCinco, {
+				type: 'pattern',
+				patternUrl: THREEx.ArToolkitContext.baseURL + 'AR.js/data/data/cinco.patt'
+				// patternUrl : THREEx.ArToolkitContext.baseURL + '../data/data/patt.kanji',
+			})
+			// add a gizmo in the center of the marker
+			// var geometry	= new THREE.OctahedronGeometry( 0.1, 0 )
+			// var material	= new THREE.MeshNormalMaterial({
+			// 	wireframe: true
+			// });
+			// var mesh	= new THREE.Mesh( geometry, material );
+			// markerCinco.add( mesh );
+
+
+			//////////////////////////////////////////////////////////////////////////////
+			//		markerRoot2
+			//////////////////////////////////////////////////////////////////////////////
+			// build markerControls
+			var markerHiro = new THREE.Group
+			markerHiro.name = 'markerHiro'
+			scene.add(markerHiro)
+			var markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerHiro, {
+				type: 'pattern',
+				patternUrl: THREEx.ArToolkitContext.baseURL + 'AR.js/data/data/patt.hiro'
+			})
+			// add a gizmo in the center of the marker
+			var geometry = new THREE.OctahedronGeometry(0.1, 0)
+			var material = new THREE.MeshNormalMaterial({
+				wireframe: true
+			});
+			var mesh = new THREE.Mesh(geometry, material);
+			markerHiro.add(mesh);
+
+
+
+			//////////////////////////////////////////////////////////////////////////////
+			//		markerRoot3 ------ 3d cube
+			//////////////////////////////////////////////////////////////////////////////
+			// build markerControls
+			var markerBNW = new THREE.Group
+			markerBNW.name = 'markerBNW'
+			scene.add(markerBNW)
+			var markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerBNW, {
+				type: 'pattern',
+				patternUrl: THREEx.ArToolkitContext.baseURL + 'AR.js/data/data/bnw.patt'
+			})
+
+
+			//////////////////////////////////////////////////////////////////////////////
+			//		markerRoot4 ------ 2d image
+			//////////////////////////////////////////////////////////////////////////////
+			// build markerControls
+			var markerBC = new THREE.Group
+			markerBC.name = 'markerBNW'
+			scene.add(markerBC)
+			var markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerBC, {
+				type: 'pattern',
+				patternUrl: THREEx.ArToolkitContext.baseURL + 'AR.js/data/data/bnw_cinco.patt'
+			})
+
+
+
+
+
+			// build a smoothedControls
+			// var smoothedRoot = new THREE.Group()
+			// scene.add(smoothedRoot);
+			// var smoothedControls = new THREEx.ArSmoothedControls(smoothedRoot, {
+			// 	lerpPosition: 0.4,
+			// 	lerpQuaternion: 0.3,
+			// 	lerpScale: 1,
+			// })
+			// onRenderFcts.push(function(delta){
+			// 	smoothedControls.update(smoothedRoot)
+			// })
+			//////////////////////////////////////////////////////////////////////////////////
+			//		add an object in the scene
+			//////////////////////////////////////////////////////////////////////////////////
+
+			// var arWorldRoot = smoothedRoot
+
+
+			// add a static 3d cube model 
+			var color = new THREE.Color("#7833aa");
+
+			var geometry = new THREE.CubeGeometry(1, 1, 1);
+			var material = new THREE.MeshLambertMaterial(
+				{
+					color: color.getHex(),
+					transparent: true,
+					opacity: 0.5,
+				});
+
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.y = geometry.parameters.height / 2
+			markerBNW.add(mesh);
+
+
+			// add a torus knot
+			var geometry = new THREE.CubeGeometry(1, 1, 1);
+			var material = new THREE.MeshNormalMaterial({
+				transparent: true,
+				opacity: 0.5,
+				side: THREE.DoubleSide
+			});
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.y = geometry.parameters.height / 2
+			markerHiro.add(mesh);
+			//mesh.visible = false;
+
+			var geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 16);
+			var material = new THREE.MeshNormalMaterial();
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.y = 0.5
+			markerHiro.add(mesh);
+
+			var light = new THREE.AmbientLight(0xffffff, 0.5);
+			scene.add(light);
+
+			var light2 = new THREE.PointLight(0xffffff, 0.5);
+			scene.add(light2);
+
+			//external model
+			var loader = new THREE.JSONLoader();
+			loader.load('AR.js/data/models/monkey_animated.json', handle_load);
+
+			var mesh;
+			var mixer;
+			var mesh2;
+
+			function handle_load(geometry, materials) {
+				//ANIMATION MESH
+				var material = new THREE.MeshLambertMaterial({ morphTargets: true });
+
+				mesh2 = new THREE.Mesh(geometry, material);
+				mesh2.rotation.x = -Math.PI / 2;
+				mesh2.position.y = 0.5
+				mesh2.scale.x = mesh2.scale.y = mesh2.scale.z = 0.5;
+				markerHiro.add(mesh2);
+
+				//MIXER
+				mixer = new THREE.AnimationMixer(mesh2);
+
+				var clip = THREE.AnimationClip.CreateFromMorphTargetSequence('talk', geometry.morphTargets, 30);
+				mixer.clipAction(clip).setDuration(1).play();
+			}
+
+
+			onRenderFcts.push(function () {
+				mesh.rotation.x += 0.1
+				if (mixer)
+					mixer.update(0.01);
+			})
+
+			// videos
+			var video = document.getElementById('video');
+			var texture = new THREE.VideoTexture(video);
+			texture.needsUpdate;
+			texture.minFilter = THREE.LinearFilter;
+			texture.magFilter = THREE.LinearFilter;
+			texture.format = THREE.RGBFormat;
+			texture.crossOrigin = 'anonymous';
+
+			var imageObject = new THREE.Mesh(
+				new THREE.PlaneGeometry(1.920, 1.080),
+				new THREE.MeshBasicMaterial({ map: texture }), );
+			imageObject.rotation.x = -Math.PI / 2;
+			video.load();
+			markerCinco.add(imageObject);
+
+
+			// load a image resource
+			var loaderImg = new THREE.TextureLoader();
+			loaderImg.load(
+				// resource URL
+				'AR.js/data/images/armchair.jpg',
+
+				// onLoad callback
+				function (texture) {
+					// use the image, e.g. draw part of it on a canvas
+					var geometry = new THREE.PlaneGeometry(1.920, 1.080);
+					var material = new THREE.MeshBasicMaterial({ map: texture, overdraw: 0.5 });
+					var mesh = new THREE.Mesh(geometry, material);
+					mesh.rotation.x = -Math.PI / 2;
+
+					markerBC.add(mesh);
+				},
+				// onProgress callback currently not supported
+				undefined,
+				// onError callback
+				function () {
+					console.error('Load image error happened.');
+				}
+			);
+
+			//////////////////////////////////////////////////////////////////////////////////
+			//		render the whole thing on the page
+			//////////////////////////////////////////////////////////////////////////////////
+			var stats = new Stats();
+			document.body.appendChild(stats.dom);
+			// render the scene
+			onRenderFcts.push(function () {
+				renderer.render(scene, camera);
+				stats.update();
+			})
+
+			// run the rendering loop
+			var lastTimeMsec = null
+			requestAnimationFrame(function animate(nowMsec) {
+				// keep looping
+				requestAnimationFrame(animate);
+				// measure time
+				lastTimeMsec = lastTimeMsec || nowMsec - 1000 / 60
+				var deltaMsec = Math.min(200, nowMsec - lastTimeMsec)
+				lastTimeMsec = nowMsec
+				// call each update function
+				onRenderFcts.forEach(function (onRenderFct) {
+					onRenderFct(deltaMsec / 1000, nowMsec / 1000)
+				})
+			})
+		}
+
+
+		function RemoveMeshesFromGroup(group) {
+			for (var i = group.children.length - 1; i >= 0; i--) {
+				group.remove(group.children[i]);
+			}
+		}
+		function CreateCubeByColor(color, group) {
+			var color = new THREE.Color(color);
+			var material = new THREE.MeshLambertMaterial({ color: color.getHex() });
+			var len = Math.floor((Math.random() * 2) + 1);
+			var wide = Math.floor((Math.random() * 2) + 1);
+			var high = Math.floor((Math.random() * 2) + 1);
+			var geometry = new THREE.CubeGeometry(len, wide, high);
+
+			var material = new THREE.MeshLambertMaterial({ color: color.getHex() });
+			var mesh = new THREE.Mesh(geometry, material);
+			mesh.position.y = geometry.parameters.height / 2
+			group.add(mesh);
+		}
+
+		function LoadImageToGroup(imageUrl, group) {
+			var loaderImg = new THREE.TextureLoader();
+			loaderImg.load(
+				// resource URL
+				imageUrl,
+
+				// onLoad callback
+				function (texture) {
+					// use the image, e.g. draw part of it on a canvas
+					var geometry = new THREE.PlaneGeometry(1.920, 1.080);
+					var material = new THREE.MeshBasicMaterial({ map: texture, overdraw: 0.5 });
+					var mesh = new THREE.Mesh(geometry, material);
+					mesh.rotation.x = -Math.PI / 2;
+
+					group.add(mesh);
+				},
+				// onProgress callback currently not supported
+				undefined,
+				// onError callback
+				function () {
+					console.error('Load image error happened.');
+				}
+			);
+		}
+
+		var srcToggle = false;
+
+		document.addEventListener("keydown", onDocumentKeyDown, false);
+		function onDocumentKeyDown(event) {
+			var keyCode = event.which;
+			if (keyCode == 87) {
+
+				console.log("red");
+				RemoveMeshesFromGroup(markerBNW);
+				CreateCubeByColor("#cc0000", markerBNW)
+
+			} else if (keyCode == 83) {
+
+				console.log("yellow");
+				RemoveMeshesFromGroup(markerBNW);
+				CreateCubeByColor("#ffff00", markerBNW)
+
+			} else if (keyCode == 65) {
+
+				console.log("green");
+				RemoveMeshesFromGroup(markerBNW);
+				CreateCubeByColor("#00ff7f", markerBNW)
+				// mesh.visible = !mesh.visible;
+				// mesh2.visible = !mesh2.visible;
+			} else if (keyCode == 68) {
+
+				console.log("black");
+				RemoveMeshesFromGroup(markerBNW);
+				CreateCubeByColor("#000000", markerBNW)
+				// mesh.visible = !mesh.visible;
+				// mesh2.visible = !mesh2.visible;
+			} else if (keyCode == 32) {
+				console.log("space");
+
+			} else if (keyCode == 38) {
+				RemoveMeshesFromGroup(markerBC);
+				LoadImageToGroup('AR.js/data/images/armchair.jpg', markerBC);
+			} else if (keyCode == 40) {
+				RemoveMeshesFromGroup(markerBC);
+				LoadImageToGroup('AR.js/data/images/chalk_multi.jpg', markerBC);
+			}
+		};
+
+
+
+		function ChangeCubeModel() {
+
+			RemoveMeshesFromGroup(markerBNW);
+			var selection = Math.floor((Math.random() * 4) + 1);
+			switch (selection) {
+				case 1:
+					CreateCubeByColor("#cc0000", markerBNW)
+					break;
+				case 2:
+					CreateCubeByColor("#ffff00", markerBNW)
+					break;
+				case 3:
+					CreateCubeByColor("#00ff7f", markerBNW)
+					break;
+				case 4:
+					CreateCubeByColor("#000000", markerBNW)
+					break;
+			}
+		}
+
+		function ToggleImageSrc() {
+			RemoveMeshesFromGroup(markerBC);
+			if (srcToggle != true) {
+				srcToggle = true;
+				LoadImageToGroup('AR.js/data/images/chalk_multi.jpg', markerBC);
+			} else {
+				srcToggle = false;
+				LoadImageToGroup('AR.js/data/images/armchair.jpg', markerBC);
+			}
+		}
+
+
+		function OpenLink() {
+			var a = document.createElement('a');
+			a.setAttribute("href", "http://www.google.fi");
+			// a.setAttribute("target", "_blank");
+			var dispatch = document.createEvent("HTMLEvents");
+			dispatch.initEvent("click", true, true);
+			// a.dispatchEvent(dispatch);
+			a.dispatchEvent(new MouseEvent("click", { 'view': window, 'bubbles': true, 'cancelable': true }));
+		}
+
+
+	</script>
+
+	<button id="playBtn" onclick="playVideo()">Play Video</button>
+	<button id="cubeBtn" onclick="ChangeCubeModel()">Change Cube</button>
+	<button id="imageBtn" onclick="ToggleImageSrc()">Change Image SRC</button>
+	<button id="openlink" onclick="OpenLink()">Open External link</button>
+</body>
