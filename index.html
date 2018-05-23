@@ -59,16 +59,24 @@
 		<a href='https://twitter.com/jerome_etienne' target='_blank'>@jerome_etienne</a>
 	</div> -->
 
-	<video id="video" playsinline autoplay loop crossOrigin="anonymous" webkit-playsinline style="display:none">
+	<video id="video" playsinline loop crossOrigin="anonymous" webkit-playsinline style="display:none">
 		<source src="content/sintel.ogv" type='video/ogg; codecs="theora, vorbis"'>
 		<source src="content/sintel.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
 	</video>
 
 	<div id="WechatErrorDialog">
 		<p id="ErrorMsg">
-			Please copy the link below and open it in Safari browser. http://www.baidu.com
+			Please copy the link below and open it in Safari browser. 
+			<br/><br/>
+			https://windkusanagi.github.io/ar/
 		</p>
 	</div>
+
+
+	<button id="playBtn" onclick="playVideo()">Play Video</button>
+	<button id="cubeBtn" onclick="ChangeCubeModel()">Change Cube</button>
+	<button id="imageBtn" onclick="ToggleImageSrc()">Change Image SRC</button>
+	<button id="openlink" onclick="OpenLink()">Open External link</button>
 
 	<script>
 		function playVideo() {
@@ -600,9 +608,4 @@
 
 
 	</script>
-
-	<button id="playBtn" onclick="playVideo()">Play Video</button>
-	<button id="cubeBtn" onclick="ChangeCubeModel()">Change Cube</button>
-	<button id="imageBtn" onclick="ToggleImageSrc()">Change Image SRC</button>
-	<button id="openlink" onclick="OpenLink()">Open External link</button>
 </body>
