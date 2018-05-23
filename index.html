@@ -103,6 +103,28 @@
 			// }
 		}
 
+		function checkBrowser() {
+			if ((navigator.userAgent.indexOf("Opera") || navigator.userAgent.indexOf('OPR')) != -1) {
+				alert('Opera');
+			}
+			else if (navigator.userAgent.indexOf("Chrome") != -1) {
+				alert('Chrome');
+			}
+			else if (navigator.userAgent.indexOf("Safari") != -1) {
+				alert('Safari');
+			}
+			else if (navigator.userAgent.indexOf("Firefox") != -1) {
+				alert('Firefox');
+			}
+			else if ((navigator.userAgent.indexOf("MSIE") != -1) || (!!document.documentMode == true)) //IF IE > 10
+			{
+				alert('IE');
+			}
+			else {
+				alert('unknown');
+			}
+		}
+
 
 		//////////////////////////////////////////////////////////////////////////////////
 		//		Init
@@ -113,15 +135,15 @@
 			isWeixin = true;
 		} else {
 			if (document.addEventListener) {
-				document.addEventListener("WeixinJSBridgeReady", function() { isWeixin = true; }, false);
+				document.addEventListener("WeixinJSBridgeReady", function () { isWeixin = true; }, false);
 			} else if (document.attachEvent) {
-				document.attachEvent("WeixinJSBridgeReady", function() { isWeixin = true; });
-				document.attachEvent("onWeixinJSBridgeReady", function() { isWeixin = true; });
+				document.attachEvent("WeixinJSBridgeReady", function () { isWeixin = true; });
+				document.attachEvent("onWeixinJSBridgeReady", function () { isWeixin = true; });
 			}
 		}
 
 		alert("is opened from wechat? " + String(isWeixin));
-
+		CheckBrowser();
 
 		if (CheckWebRTC() === false) {
 			alert("WEBRTC not supported!");
@@ -133,7 +155,7 @@
 		} else {
 			alert("passed webrtc check");
 			document.getElementById("WechatErrorDialog").style.display = "none";
-		
+
 			// init renderer
 			var renderer = new THREE.WebGLRenderer({
 				// antialias	: true,
