@@ -79,7 +79,7 @@
 	<button id="cubeBtn" onclick="ChangeCubeModel()">Change Cube</button>
 	<button id="imageBtn" onclick="ToggleImageSrc()">Change Image SRC</button>
 	<button id="openlink" onclick="OpenLink()">Open External link</button>
-	<a href="#" onclick="window.open('http://www.google.com', '_system');">Google</a>
+	<!-- <a href="#" onclick="window.open('http://www.google.com', '_system');">Google</a> -->
 	<script>
 		function playVideo() {
 			document.getElementById('video').play();
@@ -147,7 +147,7 @@
 			document.getElementById("playBtn").style.display = "none";
 			document.getElementById("cubeBtn").style.display = "none";
 			document.getElementById("imageBtn").style.display = "none";
-			// document.getElementById("openlink").style.display = "none";
+			document.getElementById("openlink").style.display = "none";
 			document.getElementById("WechatErrorDialog").style.display = "flex";
 		} else {
 			alert("passed webrtc check");
