@@ -73,11 +73,6 @@
 	</div>
 
 
-	<button id="playBtn" onclick="playVideo()">Play Video</button>
-	<button id="cubeBtn" onclick="ChangeCubeModel()">Change Cube</button>
-	<button id="imageBtn" onclick="ToggleImageSrc()">Change Image SRC</button>
-	<button id="openlink" onclick="OpenLink()">Open External link</button>
-
 	<script>
 		function playVideo() {
 			document.getElementById('video').play();
@@ -602,7 +597,10 @@
 			// a.dispatchEvent(dispatch);
 			a.dispatchEvent(new MouseEvent("click", { 'view': window, 'bubbles': true, 'cancelable': true }));
 		}
-
-
 	</script>
+
+	<button id="playBtn" onclick="playVideo()">Play Video</button>
+	<button id="cubeBtn" onclick="ChangeCubeModel()">Change Cube</button>
+	<button id="imageBtn" onclick="ToggleImageSrc()">Change Image SRC</button>
+	<button id="openlink" onclick="OpenLink()">Open External link</button>
 </body>
